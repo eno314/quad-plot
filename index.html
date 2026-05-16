@@ -35,13 +35,13 @@
         
         <!-- Items -->
         <template x-for="item in items" :key="item.id">
-          <div class="absolute flex flex-col items-center cursor-grab active:cursor-grabbing"
+          <div class="absolute flex flex-col items-center cursor-grab active:cursor-grabbing group"
                :style="`left: ${item.x}px; top: ${item.y}px; transform: translate(-50%, -50%);`"
                @mousedown.prevent="startDrag($event, item.id)"
-               @dblclick.stop>
+               @dblclick.stop="openItemDialog(item)">
                
             <!-- Dot -->
-            <div class="w-4 h-4 rounded-full bg-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.8)] border-2 border-slate-900 transition-transform hover:scale-125"></div>
+            <div class="w-4 h-4 rounded-full bg-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.8)] border-2 border-slate-900 transition-transform group-hover:scale-125"></div>
             
             <!-- Label -->
             <div class="mt-2 px-3 py-1 bg-slate-800/80 rounded-md text-sm font-semibold border border-slate-700 whitespace-nowrap shadow-xl backdrop-blur-md text-cyan-50"
@@ -52,6 +52,63 @@
         <!-- Overlay Instruction -->
         <div class="absolute bottom-8 left-1/2 -translate-x-1/2 px-6 py-3 bg-slate-800/60 rounded-full text-slate-300 text-sm backdrop-blur border border-slate-700/50 shadow-2xl pointer-events-none animate-pulse">
           任意の場所をダブルクリックしてアイテムを追加
+        </div>
+
+        <!-- Item Edit Modal -->
+        <div x-show="editingItem !== null" 
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             x-cloak
+             class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
+          
+          <div class="bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl border border-slate-700 p-6 space-y-6"
+               @click.away="closeItemDialog()">
+            
+            <div class="flex items-center justify-between">
+              <h3 class="text-xl font-bold text-slate-100">アイテムの編集</h3>
+              <button type="button" @click="closeItemDialog()" class="text-slate-400 hover:text-slate-100 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <title>閉じる</title>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
+
+            <template x-if="editingItem">
+              <div class="space-y-4">
+                <div>
+                  <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">名前</label>
+                  <input type="text" x-model="editingItem.text" 
+                         class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-all">
+                </div>
+
+                <div>
+                  <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">メモ</label>
+                  <textarea x-model="editingItem.memo" rows="4"
+                            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-all placeholder:text-slate-600"
+                            placeholder="気づきや補足情報を入力..."></textarea>
+                </div>
+              </div>
+            </template>
+
+            <div class="flex items-center justify-between pt-4">
+              <button type="button" @click="deleteItem()" 
+                      class="px-4 py-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors font-medium">
+                削除する
+              </button>
+              <div class="flex space-x-3">
+                <button type="button" @click="closeItemDialog()" 
+                        class="px-4 py-2 text-slate-300 hover:text-slate-100 transition-colors">
+                  キャンセル
+                </button>
+                <button type="button" @click="saveItemDialog()" 
+                        class="px-6 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg font-bold shadow-lg shadow-cyan-900/20 transition-all">
+                  保存
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

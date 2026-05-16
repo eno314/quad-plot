@@ -15,6 +15,7 @@ export function createItem(text, x, y, idGenerator = null) {
 	return {
 		id: generateId(),
 		text: text.trim(),
+		memo: "",
 		x,
 		y,
 	};
