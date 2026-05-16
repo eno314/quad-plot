@@ -7,13 +7,15 @@
  * @returns {Object} 生成されたアイテム
  */
 export function createItem(text, x, y, idGenerator = null) {
-  // 指定されていなければデフォルトのID生成ロジックを使用
-  const generateId = idGenerator || (() => Date.now().toString() + Math.random().toString(36).substring(2, 9));
-  
-  return {
-    id: generateId(),
-    text: text.trim(),
-    x,
-    y
-  };
+	// 指定されていなければデフォルトのID生成ロジックを使用
+	const generateId =
+		idGenerator ||
+		(() => Date.now().toString() + Math.random().toString(36).substring(2, 9));
+
+	return {
+		id: generateId(),
+		text: text.trim(),
+		x,
+		y,
+	};
 }
