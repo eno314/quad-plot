@@ -14,18 +14,53 @@ document.addEventListener("alpine:init", () => {
 		startY: 0,
 		offsetX: 0,
 		offsetY: 0,
+		labels: {
+			xPositive: "(+)",
+			xNegative: "(-)",
+			yPositive: "(+)",
+			yNegative: "(-)",
+			qTopLeft: "Top Left",
+			qTopRight: "Top Right",
+			qBottomLeft: "Bottom Left",
+			qBottomRight: "Bottom Right",
+		},
 
 		init() {
-			// 1. ローカルストレージから初期データを復元（モジュールを使用）
-			this.items = loadItems(STORAGE_KEY);
+			// ローカルストレージから初期データを復元（モジュールを使用）
+			const savedItems = loadItems(STORAGE_KEY);
+			if (savedItems && savedItems.length > 0) {
+				this.items = savedItems;
+			}
+
+			const savedLabels = localStorage.getItem("quadPlot_labels");
+			if (savedLabels) {
+				try {
+					this.labels = { ...this.labels, ...JSON.parse(savedLabels) };
+				} catch (e) {
+					console.error("Failed to parse labels", e);
+				}
+			}
 		},
 
-		// データを保存するヘルパー関数（モジュールを使用）
+		// データを保存するヘルパー関数
 		save() {
 			saveItems(STORAGE_KEY, this.items);
+			localStorage.setItem("quadPlot_labels", JSON.stringify(this.labels));
 		},
 
-		// 2. ダブルクリックでアイテムを追加
+		// ラベル編集処理
+		editLabel(key) {
+			const newText = window.prompt(
+				"新しいラベルを入力してください:",
+				this.labels[key],
+			);
+			if (newText !== null && newText.trim() !== "") {
+				this.labels[key] = newText.trim();
+				this.save();
+			}
+		},
+
+		// ダブルクリックでアイテムを追加
 		handleDblClick(e) {
 			// コンテナ（背景）以外の要素（アイテムなど）をダブルクリックした場合は無視
 			if (e.target !== this.$refs.container) return;
