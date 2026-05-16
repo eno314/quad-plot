@@ -14,27 +14,45 @@
            @dblclick="handleDblClick" 
            class="relative w-screen h-screen">
            
+        <!-- Tab Bar -->
+        <div class="absolute top-4 left-[calc(50%+16px)] flex items-center p-1 bg-slate-800/80 backdrop-blur border border-slate-700/50 rounded-xl z-40 pointer-events-auto shadow-xl">
+          <template x-for="tab in tabs" :key="tab.id">
+            <button type="button" @click="switchTab(tab.id)" @dblclick="editTabName(tab.id)"
+                    :class="{'bg-slate-700 text-cyan-400 shadow-sm': activeTabId === tab.id, 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50': activeTabId !== tab.id}"
+                    class="px-4 py-1.5 mx-0.5 rounded-lg text-sm font-bold transition-all"
+                    x-text="tab.name"></button>
+          </template>
+          <div class="w-px h-5 bg-slate-700 mx-1"></div>
+          <button type="button" @click="addTab()" 
+                  class="p-1.5 mx-0.5 text-slate-400 hover:text-cyan-400 hover:bg-slate-700/50 rounded-lg transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <title>新しいマップ</title>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+            </svg>
+          </button>
+        </div>
+           
         <!-- X Axis -->
         <div class="absolute top-1/2 left-0 w-full h-[2px] bg-slate-600/50 -translate-y-1/2 pointer-events-none flex items-center justify-between px-4 text-xs text-slate-400 font-medium">
-          <span class="pointer-events-auto cursor-pointer hover:text-cyan-400 px-2 py-1" @dblclick.stop="editLabel('xNegative')" x-text="labels.xNegative"></span>
-          <span class="pointer-events-auto cursor-pointer hover:text-cyan-400 px-2 py-1" @dblclick.stop="editLabel('xPositive')" x-text="labels.xPositive"></span>
+          <span class="pointer-events-auto cursor-pointer hover:text-cyan-400 px-2 py-1" @dblclick.stop="editLabel('xNegative')" x-text="activeTab.labels.xNegative"></span>
+          <span class="pointer-events-auto cursor-pointer hover:text-cyan-400 px-2 py-1" @dblclick.stop="editLabel('xPositive')" x-text="activeTab.labels.xPositive"></span>
         </div>
 
         <!-- Y Axis -->
         <div class="absolute left-1/2 top-0 h-full w-[2px] bg-slate-600/50 -translate-x-1/2 pointer-events-none flex flex-col items-center justify-between py-4 text-xs text-slate-400 font-medium">
-          <span class="pointer-events-auto cursor-pointer hover:text-cyan-400 px-2 py-1" @dblclick.stop="editLabel('yPositive')" x-text="labels.yPositive"></span>
-          <span class="pointer-events-auto cursor-pointer hover:text-cyan-400 px-2 py-1" @dblclick.stop="editLabel('yNegative')" x-text="labels.yNegative"></span>
+          <span class="pointer-events-auto cursor-pointer hover:text-cyan-400 px-2 py-1" @dblclick.stop="editLabel('yPositive')" x-text="activeTab.labels.yPositive"></span>
+          <span class="pointer-events-auto cursor-pointer hover:text-cyan-400 px-2 py-1" @dblclick.stop="editLabel('yNegative')" x-text="activeTab.labels.yNegative"></span>
         </div>
 
         <!-- Quadrant Labels -->
-        <div class="absolute top-8 left-8 text-slate-500/50 font-bold text-2xl md:text-4xl cursor-pointer hover:text-cyan-400/80 transition-colors pointer-events-auto" @dblclick.stop="editLabel('qTopLeft')" x-text="labels.qTopLeft"></div>
-        <div class="absolute top-8 right-8 text-slate-500/50 font-bold text-2xl md:text-4xl cursor-pointer hover:text-cyan-400/80 transition-colors pointer-events-auto" @dblclick.stop="editLabel('qTopRight')" x-text="labels.qTopRight"></div>
-        <div class="absolute bottom-8 left-8 text-slate-500/50 font-bold text-2xl md:text-4xl cursor-pointer hover:text-cyan-400/80 transition-colors pointer-events-auto" @dblclick.stop="editLabel('qBottomLeft')" x-text="labels.qBottomLeft"></div>
-        <div class="absolute bottom-8 right-8 text-slate-500/50 font-bold text-2xl md:text-4xl cursor-pointer hover:text-cyan-400/80 transition-colors pointer-events-auto" @dblclick.stop="editLabel('qBottomRight')" x-text="labels.qBottomRight"></div>
+        <div class="absolute top-8 left-8 text-slate-500/50 font-bold text-2xl md:text-4xl cursor-pointer hover:text-cyan-400/80 transition-colors pointer-events-auto" @dblclick.stop="editLabel('qTopLeft')" x-text="activeTab.labels.qTopLeft"></div>
+        <div class="absolute top-8 right-8 text-slate-500/50 font-bold text-2xl md:text-4xl cursor-pointer hover:text-cyan-400/80 transition-colors pointer-events-auto" @dblclick.stop="editLabel('qTopRight')" x-text="activeTab.labels.qTopRight"></div>
+        <div class="absolute bottom-8 left-8 text-slate-500/50 font-bold text-2xl md:text-4xl cursor-pointer hover:text-cyan-400/80 transition-colors pointer-events-auto" @dblclick.stop="editLabel('qBottomLeft')" x-text="activeTab.labels.qBottomLeft"></div>
+        <div class="absolute bottom-8 right-8 text-slate-500/50 font-bold text-2xl md:text-4xl cursor-pointer hover:text-cyan-400/80 transition-colors pointer-events-auto" @dblclick.stop="editLabel('qBottomRight')" x-text="activeTab.labels.qBottomRight"></div>
 
         
         <!-- Items -->
-        <template x-for="item in items" :key="item.id">
+        <template x-for="item in activeTab.items" :key="item.id">
           <div class="absolute flex flex-col items-center cursor-grab active:cursor-grabbing group"
                :style="`left: ${item.x}px; top: ${item.y}px; transform: translate(-50%, -50%);`"
                @mousedown.prevent="startDrag($event, item.id)"
@@ -50,7 +68,7 @@
         </template>
 
         <!-- Overlay Instruction -->
-        <div class="absolute bottom-8 left-1/2 -translate-x-1/2 px-6 py-3 bg-slate-800/60 rounded-full text-slate-300 text-sm backdrop-blur border border-slate-700/50 shadow-2xl pointer-events-none animate-pulse">
+        <div class="absolute bottom-8 left-[calc(50%+16px)] px-6 py-3 bg-slate-800/60 rounded-full text-slate-300 text-sm backdrop-blur border border-slate-700/50 shadow-2xl pointer-events-none animate-pulse">
           任意の場所をダブルクリックしてアイテムを追加
         </div>
 

@@ -4,59 +4,119 @@ import { getRelativeCoordinates } from "./geometry";
 import { createItem } from "./item";
 import { loadItems, saveItems } from "./storage";
 
-const STORAGE_KEY = "quadPlot_items";
-
 document.addEventListener("alpine:init", () => {
 	Alpine.data("quadPlot", () => ({
-		items: [],
+		tabs: [],
+		activeTabId: null,
 		draggingId: null,
 		startX: 0,
 		startY: 0,
 		offsetX: 0,
 		offsetY: 0,
 		editingItem: null,
-		labels: {
-			xPositive: "(+)",
-			xNegative: "(-)",
-			yPositive: "(+)",
-			yNegative: "(-)",
-			qTopLeft: "Top Left",
-			qTopRight: "Top Right",
-			qBottomLeft: "Bottom Left",
-			qBottomRight: "Bottom Right",
+
+		get activeTab() {
+			const defaultTab = {
+				id: "temp",
+				name: "",
+				items: [],
+				labels: this.defaultLabels(),
+			};
+			return (
+				this.tabs.find((t) => t.id === this.activeTabId) ||
+				this.tabs[0] ||
+				defaultTab
+			);
+		},
+
+		defaultLabels() {
+			return {
+				xPositive: "(+)",
+				xNegative: "(-)",
+				yPositive: "(+)",
+				yNegative: "(-)",
+				qTopLeft: "Top Left",
+				qTopRight: "Top Right",
+				qBottomLeft: "Bottom Left",
+				qBottomRight: "Bottom Right",
+			};
 		},
 
 		init() {
-			// ローカルストレージから初期データを復元（モジュールを使用）
-			const savedItems = loadItems(STORAGE_KEY);
-			if (savedItems && savedItems.length > 0) {
-				this.items = savedItems;
-			}
+			const savedTabs = loadItems("quadPlot_tabs");
+			const savedActiveTabId = localStorage.getItem("quadPlot_activeTabId");
 
-			const savedLabels = localStorage.getItem("quadPlot_labels");
-			if (savedLabels) {
-				try {
-					this.labels = { ...this.labels, ...JSON.parse(savedLabels) };
-				} catch (e) {
-					console.error("Failed to parse labels", e);
+			if (savedTabs && savedTabs.length > 0) {
+				this.tabs = savedTabs;
+				if (
+					savedActiveTabId &&
+					this.tabs.some((t) => t.id === savedActiveTabId)
+				) {
+					this.activeTabId = savedActiveTabId;
+				} else {
+					this.activeTabId = this.tabs[0].id;
 				}
+			} else {
+				// 初期タブを作成
+				const newTab = {
+					id: Date.now().toString(),
+					name: "Map 1",
+					items: [],
+					labels: this.defaultLabels(),
+				};
+				this.tabs = [newTab];
+				this.activeTabId = newTab.id;
+				this.save();
 			}
 		},
 
 		// データを保存するヘルパー関数
 		save() {
-			saveItems(STORAGE_KEY, this.items);
-			localStorage.setItem("quadPlot_labels", JSON.stringify(this.labels));
+			saveItems("quadPlot_tabs", this.tabs);
+			if (this.activeTabId) {
+				localStorage.setItem("quadPlot_activeTabId", this.activeTabId);
+			}
+		},
+
+		// タブを追加
+		addTab() {
+			const newTab = {
+				id: Date.now().toString(),
+				name: `Map ${this.tabs.length + 1}`,
+				items: [],
+				labels: this.defaultLabels(),
+			};
+			this.tabs.push(newTab);
+			this.activeTabId = newTab.id;
+			this.save();
+		},
+
+		// タブ名を編集
+		editTabName(id) {
+			const tab = this.tabs.find((t) => t.id === id);
+			if (!tab) return;
+			const newName = window.prompt("タブの名前を入力してください:", tab.name);
+			if (newName !== null && newName.trim() !== "") {
+				tab.name = newName.trim();
+				this.save();
+			}
+		},
+
+		// タブを切り替え
+		switchTab(id) {
+			this.activeTabId = id;
+			this.save();
 		},
 
 		// ラベル編集処理
 		editLabel(key) {
+			if (!this.activeTab) return;
 			const newText = window.prompt(
 				"新しいラベルを入力してください:",
-				this.labels[key],
+				this.activeTab.labels[key],
 			);
 			if (newText !== null && newText.trim() !== "") {
-				this.labels[key] = newText.trim();
+				this.activeTab.labels[key] = newText.trim();
 				this.save();
 			}
 		},
@@ -69,10 +129,12 @@ document.addEventListener("alpine:init", () => {
 
 		// アイテム詳細を保存
 		saveItemDialog() {
-			if (!this.editingItem) return;
-			const index = this.items.findIndex((i) => i.id === this.editingItem.id);
+			if (!this.editingItem || !this.activeTab) return;
+			const index = this.activeTab.items.findIndex(
+				(i) => i.id === this.editingItem.id,
+			);
 			if (index !== -1) {
-				this.items[index] = { ...this.editingItem };
+				this.activeTab.items[index] = { ...this.editingItem };
 				this.save();
 			}
 			this.editingItem = null;
@@ -85,9 +147,11 @@ document.addEventListener("alpine:init", () => {
 
 		// アイテムを削除
 		deleteItem() {
-			if (!this.editingItem) return;
+			if (!this.editingItem || !this.activeTab) return;
 			if (window.confirm("このアイテムを削除してもよろしいですか？")) {
-				this.items = this.items.filter((i) => i.id !== this.editingItem.id);
+				this.activeTab.items = this.activeTab.items.filter(
+					(i) => i.id !== this.editingItem.id,
+				);
 				this.save();
 				this.editingItem = null;
 			}
@@ -107,10 +171,10 @@ document.addEventListener("alpine:init", () => {
 
 			// アイテムを生成（モジュールを使用）
 			const newItem = createItem(text, x, y);
-			this.items.push(newItem);
-
-			// データ変更後に保存
-			this.save();
+			if (this.activeTab) {
+				this.activeTab.items.push(newItem);
+				this.save();
+			}
 		},
 
 		// 3. ドラッグ＆ドロップ開始処理
@@ -119,7 +183,8 @@ document.addEventListener("alpine:init", () => {
 			if (e.button !== 0) return;
 
 			this.draggingId = id;
-			const item = this.items.find((i) => i.id === id);
+			if (!this.activeTab) return;
+			const item = this.activeTab.items.find((i) => i.id === id);
 			if (!item) return;
 
 			// ドラッグ開始時のマウス位置とアイテム位置を記録
@@ -130,12 +195,14 @@ document.addEventListener("alpine:init", () => {
 
 			// ドラッグ中のマウス移動処理
 			const onMouseMove = (ev) => {
-				if (!this.draggingId) return;
+				if (!this.draggingId || !this.activeTab) return;
 				const dx = ev.clientX - this.startX;
 				const dy = ev.clientY - this.startY;
 
 				// 対象アイテムの座標を更新（Alpine.jsのリアクティビティで自動で画面に反映される）
-				const currentItem = this.items.find((i) => i.id === this.draggingId);
+				const currentItem = this.activeTab.items.find(
+					(i) => i.id === this.draggingId,
+				);
 				if (currentItem) {
 					currentItem.x = this.offsetX + dx;
 					currentItem.y = this.offsetY + dy;
