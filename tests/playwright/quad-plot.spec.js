@@ -29,7 +29,7 @@ test.describe("QuadPlot SPA MVP", () => {
 			await dialog.accept("Test Item 1");
 		});
 
-		const container = page.locator("#app > div").first();
+		const container = page.locator('[x-ref="container"]');
 
 		// コンテナの特定座標をダブルクリック
 		await container.dblclick({ position: { x: 200, y: 200 } });
@@ -50,7 +50,7 @@ test.describe("QuadPlot SPA MVP", () => {
 		// window.prompt のモック設定
 		page.on("dialog", async (dialog) => dialog.accept("Draggable Item"));
 
-		const container = page.locator("#app > div").first();
+		const container = page.locator('[x-ref="container"]');
 		await container.dblclick({ position: { x: 300, y: 300 } });
 
 		const item = page.locator('text="Draggable Item"').locator("..");
@@ -75,7 +75,7 @@ test.describe("QuadPlot SPA MVP", () => {
 	}) => {
 		page.on("dialog", async (dialog) => dialog.accept("Persistent Item"));
 
-		const container = page.locator("#app > div").first();
+		const container = page.locator('[x-ref="container"]');
 		await container.dblclick({ position: { x: 150, y: 150 } });
 		await expect(page.getByText("Persistent Item")).toBeVisible();
 
@@ -104,7 +104,7 @@ test.describe("アイテムの編集と削除", () => {
 				await dialog.accept("Original Name");
 			}
 		});
-		const container = page.locator("#app > div").first();
+		const container = page.locator('[x-ref="container"]');
 		await container.dblclick({ position: { x: 200, y: 200 } });
 	});
 
@@ -144,5 +144,53 @@ test.describe("アイテムの編集と削除", () => {
 
 		// アイテムが消えているか確認
 		await expect(page.getByText("Original Name")).not.toBeVisible();
+	});
+});
+
+test.describe("タブ機能", () => {
+	test.beforeEach(async ({ page }) => {
+		await page.goto("/");
+		await page.evaluate(() => window.localStorage.clear());
+		await page.reload();
+	});
+
+	test("新しいタブを追加し、名前を変更できること", async ({ page }) => {
+		// 初期タブの確認
+		await expect(page.getByText("Map 1")).toBeVisible();
+
+		// タブ追加
+		await page.click('button:has-text("新しいマップ")');
+		await expect(page.getByText("Map 2")).toBeVisible();
+
+		// タブ名の変更
+		page.on("dialog", async (dialog) => {
+			if (dialog.type() === "prompt") {
+				await dialog.accept("My Custom Map");
+			}
+		});
+		await page.getByText("Map 2").dblclick();
+		await expect(page.getByText("My Custom Map")).toBeVisible();
+	});
+
+	test("タブを切り替えるとアイテムが独立して管理されること", async ({
+		page,
+	}) => {
+		// Map 1 にアイテム追加
+		page.on("dialog", async (dialog) => {
+			if (dialog.message().includes("アイテムの名前")) {
+				await dialog.accept("Item in Map 1");
+			}
+		});
+		const container = page.locator('[x-ref="container"]');
+		await container.dblclick({ position: { x: 200, y: 200 } });
+		await expect(page.getByText("Item in Map 1")).toBeVisible();
+
+		// Map 2 を追加
+		await page.click('button:has-text("新しいマップ")');
+		await expect(page.getByText("Item in Map 1")).not.toBeVisible();
+
+		// Map 1 に戻る
+		await page.click('button:has-text("Map 1")');
+		await expect(page.getByText("Item in Map 1")).toBeVisible();
 	});
 });
