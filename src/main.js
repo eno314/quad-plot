@@ -1,5 +1,10 @@
 import './style.css';
 import Alpine from 'alpinejs';
+import { loadItems, saveItems } from './storage';
+import { createItem } from './item';
+import { getRelativeCoordinates } from './geometry';
+
+const STORAGE_KEY = 'quadPlot_items';
 
 document.addEventListener('alpine:init', () => {
   Alpine.data('quadPlot', () => ({
@@ -11,20 +16,13 @@ document.addEventListener('alpine:init', () => {
     offsetY: 0,
 
     init() {
-      // 1. ローカルストレージから初期データを復元
-      const saved = localStorage.getItem('quadPlot_items');
-      if (saved) {
-        try {
-          this.items = JSON.parse(saved);
-        } catch (e) {
-          console.error('Failed to parse items', e);
-        }
-      }
+      // 1. ローカルストレージから初期データを復元（モジュールを使用）
+      this.items = loadItems(STORAGE_KEY);
     },
 
-    // データを保存するヘルパー関数
+    // データを保存するヘルパー関数（モジュールを使用）
     save() {
-      localStorage.setItem('quadPlot_items', JSON.stringify(this.items));
+      saveItems(STORAGE_KEY, this.items);
     },
 
     // 2. ダブルクリックでアイテムを追加
@@ -35,19 +33,14 @@ document.addEventListener('alpine:init', () => {
       const text = window.prompt('アイテムの名前を入力してください:');
       if (!text || text.trim() === '') return;
 
-      // コンテナ内の相対座標を計算
+      // コンテナ内の相対座標を計算（モジュールを使用）
       const rect = this.$refs.container.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
+      const { x, y } = getRelativeCoordinates(e.clientX, e.clientY, rect);
 
-      // アイテムを配列に追加
-      this.items.push({
-        id: Date.now().toString() + Math.random().toString(36).substring(2, 9), // 簡易的なユニークID生成
-        text: text.trim(),
-        x,
-        y
-      });
-      
+      // アイテムを生成（モジュールを使用）
+      const newItem = createItem(text, x, y);
+      this.items.push(newItem);
+
       // データ変更後に保存
       this.save();
     },
@@ -56,7 +49,7 @@ document.addEventListener('alpine:init', () => {
     startDrag(e, id) {
       // 左クリックのみ許可
       if (e.button !== 0) return;
-      
+
       this.draggingId = id;
       const item = this.items.find(i => i.id === id);
       if (!item) return;
