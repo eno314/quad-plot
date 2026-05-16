@@ -1,13 +1,55 @@
 <!doctype html>
-<html lang="en">
+<html lang="ja">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>quad-plot</title>
+    <title>QuadPlot</title>
   </head>
-  <body>
-    <div id="app"></div>
+  <body class="bg-slate-900 text-slate-100 font-sans overflow-hidden select-none">
+    <div id="app">
+      <!-- Alpine Root Component -->
+      <div x-data="quadPlot" 
+           x-ref="container"
+           @dblclick="handleDblClick" 
+           class="relative w-screen h-screen">
+           
+        <!-- X Axis -->
+        <div class="absolute top-1/2 left-0 w-full h-[2px] bg-slate-600/50 -translate-y-1/2 pointer-events-none flex items-center justify-between px-4 text-xs text-slate-400 font-medium">
+          <span>(-)</span>
+          <span>X Axis</span>
+          <span>(+)</span>
+        </div>
+
+        <!-- Y Axis -->
+        <div class="absolute left-1/2 top-0 h-full w-[2px] bg-slate-600/50 -translate-x-1/2 pointer-events-none flex flex-col items-center justify-between py-4 text-xs text-slate-400 font-medium">
+          <span>(+)</span>
+          <span class="rotate-90 origin-center whitespace-nowrap">Y Axis</span>
+          <span>(-)</span>
+        </div>
+        
+        <!-- Items -->
+        <template x-for="item in items" :key="item.id">
+          <div class="absolute flex flex-col items-center cursor-grab active:cursor-grabbing"
+               :style="`left: ${item.x}px; top: ${item.y}px; transform: translate(-50%, -50%);`"
+               @mousedown.prevent="startDrag($event, item.id)"
+               @dblclick.stop>
+               
+            <!-- Dot -->
+            <div class="w-4 h-4 rounded-full bg-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.8)] border-2 border-slate-900 transition-transform hover:scale-125"></div>
+            
+            <!-- Label -->
+            <div class="mt-2 px-3 py-1 bg-slate-800/80 rounded-md text-sm font-semibold border border-slate-700 whitespace-nowrap shadow-xl backdrop-blur-md text-cyan-50"
+                 x-text="item.text"></div>
+          </div>
+        </template>
+
+        <!-- Overlay Instruction -->
+        <div class="absolute bottom-8 left-1/2 -translate-x-1/2 px-6 py-3 bg-slate-800/60 rounded-full text-slate-300 text-sm backdrop-blur border border-slate-700/50 shadow-2xl pointer-events-none animate-pulse">
+          任意の場所をダブルクリックしてアイテムを追加
+        </div>
+      </div>
+    </div>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

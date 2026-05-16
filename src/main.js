@@ -1,60 +1,104 @@
-import './style.css'
-import javascriptLogo from './assets/javascript.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import { setupCounter } from './counter.js'
+import './style.css';
+import Alpine from 'alpinejs';
 
-document.querySelector('#app').innerHTML = `
-<section id="center">
-  <div class="hero">
-    <img src="${heroImg}" class="base" width="170" height="179">
-    <img src="${javascriptLogo}" class="framework" alt="JavaScript logo"/>
-    <img src="${viteLogo}" class="vite" alt="Vite logo" />
-  </div>
-  <div>
-    <h1>Get started</h1>
-    <p>Edit <code>src/main.js</code> and save to test <code>HMR</code></p>
-  </div>
-  <button id="counter" type="button" class="counter"></button>
-</section>
+document.addEventListener('alpine:init', () => {
+  Alpine.data('quadPlot', () => ({
+    items: [],
+    draggingId: null,
+    startX: 0,
+    startY: 0,
+    offsetX: 0,
+    offsetY: 0,
 
-<div class="ticks"></div>
+    init() {
+      // 1. ローカルストレージから初期データを復元
+      const saved = localStorage.getItem('quadPlot_items');
+      if (saved) {
+        try {
+          this.items = JSON.parse(saved);
+        } catch (e) {
+          console.error('Failed to parse items', e);
+        }
+      }
+    },
 
-<section id="next-steps">
-  <div id="docs">
-    <svg class="icon" role="presentation" aria-hidden="true"><use href="/icons.svg#documentation-icon"></use></svg>
-    <h2>Documentation</h2>
-    <p>Your questions, answered</p>
-    <ul>
-      <li>
-        <a href="https://vite.dev/" target="_blank">
-          <img class="logo" src="${viteLogo}" alt="" />
-          Explore Vite
-        </a>
-      </li>
-      <li>
-        <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript" target="_blank">
-          <img class="button-icon" src="${javascriptLogo}" alt="">
-          Learn more
-        </a>
-      </li>
-    </ul>
-  </div>
-  <div id="social">
-    <svg class="icon" role="presentation" aria-hidden="true"><use href="/icons.svg#social-icon"></use></svg>
-    <h2>Connect with us</h2>
-    <p>Join the Vite community</p>
-    <ul>
-      <li><a href="https://github.com/vitejs/vite" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#github-icon"></use></svg>GitHub</a></li>
-      <li><a href="https://chat.vite.dev/" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#discord-icon"></use></svg>Discord</a></li>
-      <li><a href="https://x.com/vite_js" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#x-icon"></use></svg>X.com</a></li>
-      <li><a href="https://bsky.app/profile/vite.dev" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#bluesky-icon"></use></svg>Bluesky</a></li>
-    </ul>
-  </div>
-</section>
+    // データを保存するヘルパー関数
+    save() {
+      localStorage.setItem('quadPlot_items', JSON.stringify(this.items));
+    },
 
-<div class="ticks"></div>
-<section id="spacer"></section>
-`
+    // 2. ダブルクリックでアイテムを追加
+    handleDblClick(e) {
+      // コンテナ（背景）以外の要素（アイテムなど）をダブルクリックした場合は無視
+      if (e.target !== this.$refs.container) return;
 
-setupCounter(document.querySelector('#counter'))
+      const text = window.prompt('アイテムの名前を入力してください:');
+      if (!text || text.trim() === '') return;
+
+      // コンテナ内の相対座標を計算
+      const rect = this.$refs.container.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      // アイテムを配列に追加
+      this.items.push({
+        id: Date.now().toString() + Math.random().toString(36).substring(2, 9), // 簡易的なユニークID生成
+        text: text.trim(),
+        x,
+        y
+      });
+      
+      // データ変更後に保存
+      this.save();
+    },
+
+    // 3. ドラッグ＆ドロップ開始処理
+    startDrag(e, id) {
+      // 左クリックのみ許可
+      if (e.button !== 0) return;
+      
+      this.draggingId = id;
+      const item = this.items.find(i => i.id === id);
+      if (!item) return;
+
+      // ドラッグ開始時のマウス位置とアイテム位置を記録
+      this.startX = e.clientX;
+      this.startY = e.clientY;
+      this.offsetX = item.x;
+      this.offsetY = item.y;
+
+      // ドラッグ中のマウス移動処理
+      const onMouseMove = (ev) => {
+        if (!this.draggingId) return;
+        const dx = ev.clientX - this.startX;
+        const dy = ev.clientY - this.startY;
+        
+        // 対象アイテムの座標を更新（Alpine.jsのリアクティビティで自動で画面に反映される）
+        const currentItem = this.items.find(i => i.id === this.draggingId);
+        if (currentItem) {
+          currentItem.x = this.offsetX + dx;
+          currentItem.y = this.offsetY + dy;
+        }
+      };
+
+      // ドラッグ終了処理
+      const onMouseUp = () => {
+        if (this.draggingId) {
+          // ドラッグが完了した時点で新しい座標を永続化
+          this.save();
+        }
+        this.draggingId = null;
+        window.removeEventListener('mousemove', onMouseMove);
+        window.removeEventListener('mouseup', onMouseUp);
+      };
+
+      // ウィンドウ全体でイベントをリスンする（マウスが高速に移動しても追従するため）
+      window.addEventListener('mousemove', onMouseMove);
+      window.addEventListener('mouseup', onMouseUp);
+    }
+  }));
+});
+
+// Alpine.js の起動
+window.Alpine = Alpine;
+Alpine.start();
