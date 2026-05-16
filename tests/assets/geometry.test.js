@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'bun:test';
-import { getRelativeCoordinates } from './geometry';
+import { getRelativeCoordinates } from '../../src/geometry';
 
 describe('geometry.js', () => {
   describe('getRelativeCoordinates', () => {

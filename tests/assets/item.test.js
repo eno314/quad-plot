@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'bun:test';
-import { createItem } from './item';
+import { createItem } from '../../src/item';
 
 describe('item.js', () => {
   describe('createItem', () => {

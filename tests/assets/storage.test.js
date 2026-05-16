@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, spyOn } from 'bun:test';
-import { loadItems, saveItems } from './storage';
+import { loadItems, saveItems } from '../../src/storage';
 
 // Bunのテスト環境にはlocalStorageが存在しないためモック化する
 const mockStorage = {};
