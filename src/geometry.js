@@ -6,8 +6,8 @@
  * @returns {{x: number, y: number}} 相対座標
  */
 export function getRelativeCoordinates(clientX, clientY, containerRect) {
-  return {
-    x: clientX - containerRect.left,
-    y: clientY - containerRect.top
-  };
+	return {
+		x: clientX - containerRect.left,
+		y: clientY - containerRect.top,
+	};
 }
