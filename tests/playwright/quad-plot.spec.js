@@ -91,3 +91,58 @@ test.describe("QuadPlot SPA MVP", () => {
 		expect(style).toContain("top: 150px");
 	});
 });
+
+test.describe("アイテムの編集と削除", () => {
+	test.beforeEach(async ({ page }) => {
+		await page.goto("/");
+		await page.evaluate(() => window.localStorage.clear());
+		await page.reload();
+
+		// テスト用アイテムの作成
+		page.on("dialog", async (dialog) => {
+			if (dialog.type() === "prompt") {
+				await dialog.accept("Original Name");
+			}
+		});
+		const container = page.locator("#app > div").first();
+		await container.dblclick({ position: { x: 200, y: 200 } });
+	});
+
+	test("アイテムの名前とメモを編集できること", async ({ page }) => {
+		// アイテムをダブルクリックしてモーダルを開く
+		await page.getByText("Original Name").dblclick();
+
+		// モーダルが表示されているか確認
+		await expect(page.getByText("アイテムの編集")).toBeVisible();
+
+		// 名前とメモを編集
+		await page.fill('input[x-model="editingItem.text"]', "Updated Name");
+		await page.fill('textarea[x-model="editingItem.memo"]', "This is a memo.");
+		await page.click('button:has-text("保存")');
+
+		// 変更が反映されているか確認
+		await expect(page.getByText("Updated Name")).toBeVisible();
+
+		// 再度開いてメモが残っているか確認
+		await page.getByText("Updated Name").dblclick();
+		const memoValue = await page.inputValue(
+			'textarea[x-model="editingItem.memo"]',
+		);
+		expect(memoValue).toBe("This is a memo.");
+	});
+
+	test("アイテムを削除できること", async ({ page }) => {
+		await page.getByText("Original Name").dblclick();
+
+		// 削除ボタンをクリック (confirmダイアログを自動承認)
+		page.on("dialog", async (dialog) => {
+			if (dialog.type() === "confirm") {
+				await dialog.accept();
+			}
+		});
+		await page.click('button:has-text("削除する")');
+
+		// アイテムが消えているか確認
+		await expect(page.getByText("Original Name")).not.toBeVisible();
+	});
+});

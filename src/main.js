@@ -14,6 +14,7 @@ document.addEventListener("alpine:init", () => {
 		startY: 0,
 		offsetX: 0,
 		offsetY: 0,
+		editingItem: null,
 		labels: {
 			xPositive: "(+)",
 			xNegative: "(-)",
@@ -57,6 +58,38 @@ document.addEventListener("alpine:init", () => {
 			if (newText !== null && newText.trim() !== "") {
 				this.labels[key] = newText.trim();
 				this.save();
+			}
+		},
+
+		// アイテム詳細ダイアログを開く
+		openItemDialog(item) {
+			// ディープコピーを作成して編集
+			this.editingItem = { ...item };
+		},
+
+		// アイテム詳細を保存
+		saveItemDialog() {
+			if (!this.editingItem) return;
+			const index = this.items.findIndex((i) => i.id === this.editingItem.id);
+			if (index !== -1) {
+				this.items[index] = { ...this.editingItem };
+				this.save();
+			}
+			this.editingItem = null;
+		},
+
+		// アイテム詳細ダイアログを閉じる
+		closeItemDialog() {
+			this.editingItem = null;
+		},
+
+		// アイテムを削除
+		deleteItem() {
+			if (!this.editingItem) return;
+			if (window.confirm("このアイテムを削除してもよろしいですか？")) {
+				this.items = this.items.filter((i) => i.id !== this.editingItem.id);
+				this.save();
+				this.editingItem = null;
 			}
 		},
 

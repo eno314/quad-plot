@@ -10,6 +10,7 @@ describe("item.js", () => {
 			expect(typeof item.id).toBe("string");
 			expect(item.id.length).toBeGreaterThan(0);
 			expect(item.text).toBe("Test Item"); // 余白がトリムされること
+			expect(item.memo).toBe("");
 			expect(item.x).toBe(100);
 			expect(item.y).toBe(200);
 		});
