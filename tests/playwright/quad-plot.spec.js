@@ -9,10 +9,14 @@ test.describe("QuadPlot SPA MVP", () => {
 		await page.reload();
 	});
 
-	test("初期表示: X軸とY軸が正しく描画されていること", async ({ page }) => {
-		// 軸が存在するか確認
-		await expect(page.getByText("X Axis")).toBeVisible();
-		await expect(page.getByText("Y Axis")).toBeVisible();
+	test("初期表示: 軸ラベルと象限ラベルが正しく描画されていること", async ({
+		page,
+	}) => {
+		// デフォルトのラベルが存在するか確認
+		await expect(page.getByText("(+)").first()).toBeVisible();
+		await expect(page.getByText("(-)").first()).toBeVisible();
+		await expect(page.getByText("Top Left")).toBeVisible();
+		await expect(page.getByText("Bottom Right")).toBeVisible();
 	});
 
 	test("アイテムの追加: ダブルクリックでプロンプトが表示され、アイテムが追加されること", async ({
