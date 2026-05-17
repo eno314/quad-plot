@@ -5,6 +5,7 @@ describe("app.js", () => {
 	beforeEach(() => {
 		localStorage.clear();
 		globalThis.alert = mock();
+		globalThis.console.error = mock();
 		globalThis.window = globalThis.window || {};
 	});
 
