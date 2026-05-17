@@ -198,11 +198,20 @@ test.describe("インポートとエクスポート機能", () => {
 	});
 
 	test("データをエクスポートできること", async ({ page }) => {
+		// promptダイアログを処理する
+		page.on("dialog", async (dialog) => {
+			if (dialog.type() === "prompt") {
+				await dialog.accept("custom_export.json");
+			}
+		});
+
 		// ダウンロードの待機設定
 		const downloadPromise = page.waitForEvent("download");
 		await page.click('button:has-text("エクスポート")');
 		const download = await downloadPromise;
-		expect(download.suggestedFilename()).toContain("quadplot_data_");
+
+		// プロンプトで入力した名前が使われていることを確認
+		expect(download.suggestedFilename()).toBe("custom_export.json");
 	});
 
 	test("データをインポートして上書きできること", async ({ page }) => {
