@@ -19,20 +19,18 @@ test.describe("QuadPlot SPA MVP", () => {
 		await expect(page.getByText("Bottom Right")).toBeVisible();
 	});
 
-	test("アイテムの追加: ダブルクリックでプロンプトが表示され、アイテムが追加されること", async ({
+	test("アイテムの追加: ダブルクリックでモーダルが表示され、アイテムが追加されること", async ({
 		page,
 	}) => {
-		// window.prompt のモック設定
-		page.on("dialog", async (dialog) => {
-			expect(dialog.type()).toBe("prompt");
-			expect(dialog.message()).toBe("アイテムの名前を入力してください:");
-			await dialog.accept("Test Item 1");
-		});
-
 		const container = page.locator('[x-ref="container"]');
 
 		// コンテナの特定座標をダブルクリック
 		await container.dblclick({ position: { x: 200, y: 200 } });
+
+		// モーダルが表示され、名前を入力して保存
+		await expect(page.getByText("アイテムの追加")).toBeVisible();
+		await page.fill('input[x-model="editingItem.text"]', "Test Item 1");
+		await page.click('button:has-text("保存")');
 
 		// 'Test Item 1' というテキストが表示されることを確認
 		await expect(page.getByText("Test Item 1")).toBeVisible();
@@ -47,11 +45,11 @@ test.describe("QuadPlot SPA MVP", () => {
 	test("ドラッグ＆ドロップ機能: アイテムの座標が正しく移動すること", async ({
 		page,
 	}) => {
-		// window.prompt のモック設定
-		page.on("dialog", async (dialog) => dialog.accept("Draggable Item"));
-
 		const container = page.locator('[x-ref="container"]');
 		await container.dblclick({ position: { x: 300, y: 300 } });
+		await expect(page.getByText("アイテムの追加")).toBeVisible();
+		await page.fill('input[x-model="editingItem.text"]', "Draggable Item");
+		await page.click('button:has-text("保存")');
 
 		const item = page.locator('text="Draggable Item"').locator("..");
 
@@ -73,10 +71,11 @@ test.describe("QuadPlot SPA MVP", () => {
 	test("データの永続化: ページをリロードしてもアイテムが残っていること", async ({
 		page,
 	}) => {
-		page.on("dialog", async (dialog) => dialog.accept("Persistent Item"));
-
 		const container = page.locator('[x-ref="container"]');
 		await container.dblclick({ position: { x: 150, y: 150 } });
+		await expect(page.getByText("アイテムの追加")).toBeVisible();
+		await page.fill('input[x-model="editingItem.text"]', "Persistent Item");
+		await page.click('button:has-text("保存")');
 		await expect(page.getByText("Persistent Item")).toBeVisible();
 
 		// リロード
@@ -99,13 +98,11 @@ test.describe("アイテムの編集と削除", () => {
 		await page.reload();
 
 		// テスト用アイテムの作成
-		page.on("dialog", async (dialog) => {
-			if (dialog.type() === "prompt") {
-				await dialog.accept("Original Name");
-			}
-		});
 		const container = page.locator('[x-ref="container"]');
 		await container.dblclick({ position: { x: 200, y: 200 } });
+		await expect(page.getByText("アイテムの追加")).toBeVisible();
+		await page.fill('input[x-model="editingItem.text"]', "Original Name");
+		await page.click('button:has-text("保存")');
 	});
 
 	test("アイテムの名前とメモを編集できること", async ({ page }) => {
@@ -176,13 +173,11 @@ test.describe("タブ機能", () => {
 		page,
 	}) => {
 		// Map 1 にアイテム追加
-		page.on("dialog", async (dialog) => {
-			if (dialog.message().includes("アイテムの名前")) {
-				await dialog.accept("Item in Map 1");
-			}
-		});
 		const container = page.locator('[x-ref="container"]');
 		await container.dblclick({ position: { x: 200, y: 200 } });
+		await expect(page.getByText("アイテムの追加")).toBeVisible();
+		await page.fill('input[x-model="editingItem.text"]', "Item in Map 1");
+		await page.click('button:has-text("保存")');
 		await expect(page.getByText("Item in Map 1")).toBeVisible();
 
 		// Map 2 を追加
