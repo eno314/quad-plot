@@ -108,6 +108,67 @@ document.addEventListener("alpine:init", () => {
 			this.save();
 		},
 
+		// データをJSONとしてエクスポート
+		exportData() {
+			const data = {
+				tabs: this.tabs,
+				activeTabId: this.activeTabId,
+				version: 1,
+				exportedAt: new Date().toISOString(),
+			};
+			const jsonStr = JSON.stringify(data, null, 2);
+			const blob = new Blob([jsonStr], { type: "application/json" });
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement("a");
+			a.href = url;
+			a.download = `quadplot_data_${data.exportedAt.replace(/[:.]/g, "-")}.json`;
+			a.click();
+			URL.revokeObjectURL(url);
+		},
+
+		// JSONデータをインポート
+		importData(event) {
+			const file = event.target.files[0];
+			if (!file) return;
+
+			if (
+				!window.confirm(
+					"現在のデータはすべて上書きされ、元に戻すことはできません。インポートを実行しますか？",
+				)
+			) {
+				event.target.value = "";
+				return;
+			}
+
+			const reader = new FileReader();
+			reader.onload = (e) => {
+				try {
+					const data = JSON.parse(e.target.result);
+					if (
+						!data.tabs ||
+						!Array.isArray(data.tabs) ||
+						data.tabs.length === 0
+					) {
+						alert("有効なQuadPlotのデータファイルではありません。");
+						return;
+					}
+					this.tabs = data.tabs;
+					this.activeTabId =
+						data.activeTabId && data.tabs.some((t) => t.id === data.activeTabId)
+							? data.activeTabId
+							: data.tabs[0].id;
+					this.save();
+					alert("データのインポートが完了しました。");
+				} catch (err) {
+					console.error(err);
+					alert("JSONファイルの読み込みに失敗しました。");
+				} finally {
+					event.target.value = "";
+				}
+			};
+			reader.readAsText(file);
+		},
+
 		// ラベル編集処理
 		editLabel(key) {
 			if (!this.activeTab) return;

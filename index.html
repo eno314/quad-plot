@@ -67,6 +67,28 @@
           </div>
         </template>
 
+        <!-- Data Import / Export Buttons -->
+        <div class="absolute bottom-8 right-[calc(50%+16px)] flex items-center space-x-2 p-1 bg-slate-800/80 backdrop-blur border border-slate-700/50 rounded-xl z-40 pointer-events-auto shadow-xl">
+          <button type="button" @click="exportData()" 
+                  class="flex items-center space-x-1 px-3 py-1.5 text-slate-400 hover:text-cyan-400 hover:bg-slate-700/50 rounded-lg text-sm font-bold transition-all">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <title>エクスポート</title>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+            </svg>
+            <span>エクスポート</span>
+          </button>
+          <div class="w-px h-5 bg-slate-700"></div>
+          <button type="button" @click="$refs.fileInput.click()" 
+                  class="flex items-center space-x-1 px-3 py-1.5 text-slate-400 hover:text-cyan-400 hover:bg-slate-700/50 rounded-lg text-sm font-bold transition-all">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <title>インポート</title>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+            </svg>
+            <span>インポート</span>
+          </button>
+          <input type="file" x-ref="fileInput" @change="importData" accept=".json" class="hidden">
+        </div>
+
         <!-- Overlay Instruction -->
         <div class="absolute bottom-8 left-[calc(50%+16px)] px-6 py-3 bg-slate-800/60 rounded-full text-slate-300 text-sm backdrop-blur border border-slate-700/50 shadow-2xl pointer-events-none animate-pulse">
           任意の場所をダブルクリックしてアイテムを追加
