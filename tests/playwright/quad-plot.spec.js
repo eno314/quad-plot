@@ -189,3 +189,99 @@ test.describe("タブ機能", () => {
 		await expect(page.getByText("Item in Map 1")).toBeVisible();
 	});
 });
+
+test.describe("インポートとエクスポート機能", () => {
+	test.beforeEach(async ({ page }) => {
+		await page.goto("/");
+		await page.evaluate(() => window.localStorage.clear());
+		await page.reload();
+	});
+
+	test("データをエクスポートできること", async ({ page }) => {
+		// ダウンロードの待機設定
+		const downloadPromise = page.waitForEvent("download");
+		await page.click('button:has-text("エクスポート")');
+		const download = await downloadPromise;
+		expect(download.suggestedFilename()).toContain("quadplot_data_");
+	});
+
+	test("データをインポートして上書きできること", async ({ page }) => {
+		// インポート用のダミーデータを作成
+		const dummyData = {
+			tabs: [
+				{
+					id: "import-tab-1",
+					name: "Imported Map",
+					items: [{ id: "item-1", text: "Imported Item", x: 250, y: 250 }],
+					labels: {
+						xPositive: "(+)",
+						xNegative: "(-)",
+						yPositive: "(+)",
+						yNegative: "(-)",
+						qTopLeft: "Top Left",
+						qTopRight: "Top Right",
+						qBottomLeft: "Bottom Left",
+						qBottomRight: "Bottom Right",
+					},
+				},
+			],
+			activeTabId: "import-tab-1",
+		};
+
+		// confirmダイアログを自動承認する設定
+		page.on("dialog", async (dialog) => {
+			if (dialog.type() === "confirm") {
+				expect(dialog.message()).toContain("現在のデータはすべて上書きされ");
+				await dialog.accept();
+			} else if (dialog.type() === "alert") {
+				await dialog.accept();
+			}
+		});
+
+		// input[type="file"] にファイルをセット
+		const fileInput = page.locator('input[type="file"]');
+		await fileInput.setInputFiles({
+			name: "data.json",
+			mimeType: "application/json",
+			buffer: Buffer.from(JSON.stringify(dummyData)),
+		});
+
+		// インポートされたタブとアイテムが表示されることを確認
+		await expect(page.getByText("Imported Map")).toBeVisible();
+		await expect(page.getByText("Imported Item")).toBeVisible();
+	});
+
+	test("インポートの確認ダイアログでキャンセルすると上書きされないこと", async ({
+		page,
+	}) => {
+		// confirmダイアログをキャンセルする設定
+		page.on("dialog", async (dialog) => {
+			if (dialog.type() === "confirm") {
+				await dialog.dismiss();
+			}
+		});
+
+		const dummyData = {
+			tabs: [
+				{
+					id: "import-tab-2",
+					name: "Canceled Map",
+					items: [],
+					labels: {},
+				},
+			],
+			activeTabId: "import-tab-2",
+		};
+
+		const fileInput = page.locator('input[type="file"]');
+		await fileInput.setInputFiles({
+			name: "data.json",
+			mimeType: "application/json",
+			buffer: Buffer.from(JSON.stringify(dummyData)),
+		});
+
+		// 既存のMap 1のままであることを確認
+		await expect(page.getByText("Map 1")).toBeVisible();
+		await expect(page.getByText("Canceled Map")).not.toBeVisible();
+	});
+});
