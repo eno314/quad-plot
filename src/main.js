@@ -130,12 +130,24 @@ document.addEventListener("alpine:init", () => {
 		// アイテム詳細を保存
 		saveItemDialog() {
 			if (!this.editingItem || !this.activeTab) return;
-			const index = this.activeTab.items.findIndex(
-				(i) => i.id === this.editingItem.id,
-			);
-			if (index !== -1) {
-				this.activeTab.items[index] = { ...this.editingItem };
+			if (!this.editingItem.text || this.editingItem.text.trim() === "") {
+				alert("名前を入力してください。");
+				return;
+			}
+			this.editingItem.text = this.editingItem.text.trim();
+
+			if (this.editingItem.isNew) {
+				delete this.editingItem.isNew;
+				this.activeTab.items.push({ ...this.editingItem });
 				this.save();
+			} else {
+				const index = this.activeTab.items.findIndex(
+					(i) => i.id === this.editingItem.id,
+				);
+				if (index !== -1) {
+					this.activeTab.items[index] = { ...this.editingItem };
+					this.save();
+				}
 			}
 			this.editingItem = null;
 		},
@@ -162,19 +174,13 @@ document.addEventListener("alpine:init", () => {
 			// コンテナ（背景）以外の要素（アイテムなど）をダブルクリックした場合は無視
 			if (e.target !== this.$refs.container) return;
 
-			const text = window.prompt("アイテムの名前を入力してください:");
-			if (!text || text.trim() === "") return;
-
 			// コンテナ内の相対座標を計算（モジュールを使用）
 			const rect = this.$refs.container.getBoundingClientRect();
 			const { x, y } = getRelativeCoordinates(e.clientX, e.clientY, rect);
 
-			// アイテムを生成（モジュールを使用）
-			const newItem = createItem(text, x, y);
-			if (this.activeTab) {
-				this.activeTab.items.push(newItem);
-				this.save();
-			}
+			// アイテムを生成（初期値は空文字、まだitemsには入れない）
+			const newItem = createItem("", x, y);
+			this.editingItem = { ...newItem, isNew: true };
 		},
 
 		// 3. ドラッグ＆ドロップ開始処理
