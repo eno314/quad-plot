@@ -7,10 +7,13 @@
 ## 技術スタック
 - **Runtime / Package Manager**: Bun
 - **Build Tool**: Vite
-- **Language**: JavaScript (Vanilla JS)
+- **Language**: JavaScript (Vanilla JS / ES Modules)
 - **Framework**: Alpine.js
-- **Styling**: Tailwind CSS
-- **Deployment**: GitHub Pages (予定)
+- **Styling**: Tailwind CSS v4
+- **Linter / Formatter**: Biome
+- **Unit Test**: Bun Test (`bun:test`)
+- **E2E Test**: Playwright
+- **CI / CD**: GitHub Actions (GitHub Pages 自動デプロイ)
 
 ## 機能詳細
 
