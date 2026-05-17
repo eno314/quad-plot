@@ -109,7 +109,7 @@ document.addEventListener("alpine:init", () => {
 		},
 
 		// データをJSONとしてエクスポート
-		exportData() {
+		async exportData() {
 			const data = {
 				tabs: this.tabs,
 				activeTabId: this.activeTabId,
@@ -117,13 +117,53 @@ document.addEventListener("alpine:init", () => {
 				exportedAt: new Date().toISOString(),
 			};
 			const jsonStr = JSON.stringify(data, null, 2);
-			const blob = new Blob([jsonStr], { type: "application/json" });
-			const url = URL.createObjectURL(blob);
-			const a = document.createElement("a");
-			a.href = url;
-			a.download = `quadplot_data_${data.exportedAt.replace(/[:.]/g, "-")}.json`;
-			a.click();
-			URL.revokeObjectURL(url);
+			const defaultFilename = `quadplot_data_${data.exportedAt.replace(/[:.]/g, "-")}.json`;
+
+			let filename = window.prompt(
+				"エクスポートするファイル名を入力してください:",
+				defaultFilename,
+			);
+			if (filename === null) return; // キャンセル
+
+			filename = filename.trim();
+			if (!filename) {
+				filename = defaultFilename;
+			} else if (!filename.endsWith(".json")) {
+				filename += ".json";
+			}
+
+			const file = new File([jsonStr], filename, { type: "application/json" });
+
+			const fallbackDownload = (f) => {
+				const url = URL.createObjectURL(f);
+				const a = document.createElement("a");
+				a.href = url;
+				a.download = f.name;
+				a.click();
+				URL.revokeObjectURL(url);
+			};
+
+			if (
+				navigator.share &&
+				navigator.canShare &&
+				navigator.canShare?.({ files: [file] })
+			) {
+				try {
+					await navigator.share({
+						files: [file],
+						title: "QuadPlot Data",
+						text: "QuadPlotのデータファイルです。",
+					});
+				} catch (err) {
+					if (err.name !== "AbortError") {
+						console.error("共有に失敗しました:", err);
+						fallbackDownload(file);
+					}
+				}
+			} else {
+				// 共有APIが使えない場合は直接ダウンロード
+				fallbackDownload(file);
+			}
 		},
 
 		// JSONデータをインポート
