@@ -103,11 +103,7 @@ export function quadPlotApp() {
 				URL.revokeObjectURL(url);
 			};
 
-			if (
-				navigator.share &&
-				navigator.canShare &&
-				navigator.canShare?.({ files: [file] })
-			) {
+			if (navigator.share && navigator.canShare?.({ files: [file] })) {
 				try {
 					await navigator.share({
 						files: [file],

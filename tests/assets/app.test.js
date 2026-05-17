@@ -1,6 +1,23 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 import { quadPlotApp } from "../../src/app";
 
+// Bunのテスト環境にはlocalStorageが存在しない場合があるためモック化する
+const mockStorage = {};
+globalThis.localStorage = {
+	getItem: (key) => mockStorage[key] || null,
+	setItem: (key, val) => {
+		mockStorage[key] = String(val);
+	},
+	removeItem: (key) => {
+		delete mockStorage[key];
+	},
+	clear: () => {
+		for (const key in mockStorage) {
+			delete mockStorage[key];
+		}
+	},
+};
+
 describe("app.js", () => {
 	beforeEach(() => {
 		localStorage.clear();
@@ -230,7 +247,6 @@ describe("app.js", () => {
 
 		// Confirm accept, but invalid json
 		globalThis.window.confirm = mock(() => true);
-		let onloadCb;
 		globalThis.FileReader = class {
 			readAsText() {
 				setTimeout(() => {
@@ -238,8 +254,6 @@ describe("app.js", () => {
 				}, 0);
 			}
 		};
-		// We can test reader onload directly by invoking it
-		const reader = new FileReader();
 		const targetWithFile = {
 			files: [new File(["{}"], "data.json")],
 			value: "some",
