@@ -198,7 +198,9 @@ test.describe("タブ機能", () => {
 		await expect(page.getByRole("button", { name: "Map 2" })).toBeVisible();
 
 		// 削除ボタンが表示されることを確認
-		await expect(page.locator('button[title="タブを削除"]').first()).toBeVisible();
+		await expect(
+			page.locator('button[title="タブを削除"]').first(),
+		).toBeVisible();
 
 		// Map 2 でアイテムを追加
 		const container = page.locator('[x-ref="container"]');
@@ -212,7 +214,9 @@ test.describe("タブ機能", () => {
 		page.on("dialog", async (dialog) => {
 			if (dialog.type() === "confirm") {
 				dialogHandled = true;
-				expect(dialog.message()).toContain("このタブにはアイテムが含まれています。本当に削除しますか？");
+				expect(dialog.message()).toContain(
+					"このタブにはアイテムが含まれています。本当に削除しますか？",
+				);
 				await dialog.dismiss();
 			}
 		});

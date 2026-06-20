@@ -84,7 +84,11 @@ export function quadPlotApp() {
 			if (!tab) return;
 
 			if (tab.items && tab.items.length > 0) {
-				if (!window.confirm("このタブにはアイテムが含まれています。本当に削除しますか？")) {
+				if (
+					!window.confirm(
+						"このタブにはアイテムが含まれています。本当に削除しますか？",
+					)
+				) {
 					return;
 				}
 			}

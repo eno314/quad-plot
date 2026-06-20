@@ -297,7 +297,9 @@ describe("app.js", () => {
 			// Case 1: Cannot delete the last remaining tab
 			app.deleteTab(app.tabs[0].id);
 			expect(app.tabs.length).toBe(1);
-			expect(globalThis.alert).toHaveBeenCalledWith("これ以上タブを削除することはできません。");
+			expect(globalThis.alert).toHaveBeenCalledWith(
+				"これ以上タブを削除することはできません。",
+			);
 
 			// Add a second tab
 			app.addTab(); // now we have Map 1 and Map 2 (activeTabId is Map 2)
@@ -316,8 +318,13 @@ describe("app.js", () => {
 			// Case 3: Deleting a tab with items prompts for confirm
 			app.addTab(); // Adds Map 3, active becomes Map 3
 			const map3Id = app.activeTabId;
-			app.activeTab.items.push({ id: "item1", text: "Test Item", x: 10, y: 10 });
-			
+			app.activeTab.items.push({
+				id: "item1",
+				text: "Test Item",
+				x: 10,
+				y: 10,
+			});
+
 			// If confirm is canceled, tab is NOT deleted
 			globalThis.window.confirm = mock(() => false);
 			app.deleteTab(map3Id);
