@@ -17,10 +17,22 @@
         <!-- Tab Bar -->
         <div class="absolute top-4 left-[calc(50%+16px)] flex items-center p-1 bg-slate-800/80 backdrop-blur border border-slate-700/50 rounded-xl z-40 pointer-events-auto shadow-xl">
           <template x-for="tab in tabs" :key="tab.id">
-            <button type="button" @click="switchTab(tab.id)" @dblclick="editTabName(tab.id)"
-                    :class="{'bg-slate-700 text-cyan-400 shadow-sm': activeTabId === tab.id, 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50': activeTabId !== tab.id}"
-                    class="px-4 py-1.5 mx-0.5 rounded-lg text-sm font-bold transition-all"
-                    x-text="tab.name"></button>
+            <div class="relative group flex items-center mx-0.5 rounded-lg transition-all"
+                 :class="{'bg-slate-700 text-cyan-400 shadow-sm': activeTabId === tab.id, 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50': activeTabId !== tab.id}">
+              <button type="button" @click="switchTab(tab.id)" @dblclick="editTabName(tab.id)"
+                      :class="{'pl-4 pr-2': tabs.length > 1, 'px-4': tabs.length === 1}"
+                      class="py-1.5 text-sm font-bold transition-all"
+                      x-text="tab.name"></button>
+              <button type="button" @click.stop="deleteTab(tab.id)"
+                      x-show="tabs.length > 1"
+                      class="pr-2.5 pl-1 py-1.5 text-slate-400 hover:text-red-400 transition-colors flex items-center"
+                      title="タブを削除">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <title>タブを削除</title>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
           </template>
           <div class="w-px h-5 bg-slate-700 mx-1"></div>
           <button type="button" @click="addTab()" 

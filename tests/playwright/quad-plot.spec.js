@@ -188,6 +188,61 @@ test.describe("タブ機能", () => {
 		await page.click('button:has-text("Map 1")');
 		await expect(page.getByText("Item in Map 1")).toBeVisible();
 	});
+
+	test("タブを削除できること", async ({ page }) => {
+		// 1つのタブだけの場合、削除ボタンは非表示
+		await expect(page.locator('button[title="タブを削除"]')).not.toBeVisible();
+
+		// タブ追加
+		await page.click('button:has-text("新しいマップ")');
+		await expect(page.getByRole("button", { name: "Map 2" })).toBeVisible();
+
+		// 削除ボタンが表示されることを確認
+		await expect(
+			page.locator('button[title="タブを削除"]').first(),
+		).toBeVisible();
+
+		// Map 2 でアイテムを追加
+		const container = page.locator('[x-ref="container"]');
+		await container.dblclick({ position: { x: 200, y: 200 } });
+		await page.fill('input[x-model="editingItem.text"]', "Item in Map 2");
+		await page.click('button:has-text("保存")');
+		await expect(page.getByText("Item in Map 2")).toBeVisible();
+
+		// キャンセル確認ダイアログの挙動テスト
+		let dialogHandled = false;
+		page.on("dialog", async (dialog) => {
+			if (dialog.type() === "confirm") {
+				dialogHandled = true;
+				expect(dialog.message()).toContain(
+					"このタブにはアイテムが含まれています。本当に削除しますか？",
+				);
+				await dialog.dismiss();
+			}
+		});
+
+		// Map 2 の削除ボタンをクリック（2番目のタブなのでインデックス 1）
+		await page.locator('button[title="タブを削除"]').nth(1).click();
+		expect(dialogHandled).toBe(true);
+
+		// キャンセルしたので Map 2 は残っている
+		await expect(page.getByRole("button", { name: "Map 2" })).toBeVisible();
+
+		// 承諾確認ダイアログの挙動テスト
+		page.removeAllListeners("dialog");
+		page.on("dialog", async (dialog) => {
+			if (dialog.type() === "confirm") {
+				await dialog.accept();
+			}
+		});
+
+		// 再度削除ボタンをクリック
+		await page.locator('button[title="タブを削除"]').nth(1).click();
+
+		// Map 2 が消え、Map 1 がアクティブになることを確認
+		await expect(page.getByRole("button", { name: "Map 2" })).not.toBeVisible();
+		await expect(page.getByText("Map 1")).toBeVisible();
+	});
 });
 
 test.describe("インポートとエクスポート機能", () => {

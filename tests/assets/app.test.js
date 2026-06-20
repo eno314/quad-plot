@@ -284,4 +284,60 @@ describe("app.js", () => {
 		};
 		app.importData({ target: targetWithFile });
 	});
+
+	it("should handle deleteTab", () => {
+		let mockTime = 1000;
+		const originalDateNow = Date.now;
+		globalThis.Date.now = () => mockTime++;
+
+		try {
+			const app = quadPlotApp();
+			app.init();
+
+			// Case 1: Cannot delete the last remaining tab
+			app.deleteTab(app.tabs[0].id);
+			expect(app.tabs.length).toBe(1);
+			expect(globalThis.alert).toHaveBeenCalledWith(
+				"これ以上タブを削除することはできません。",
+			);
+
+			// Add a second tab
+			app.addTab(); // now we have Map 1 and Map 2 (activeTabId is Map 2)
+			const map1Id = app.tabs[0].id;
+			const map2Id = app.tabs[1].id;
+			expect(app.tabs.length).toBe(2);
+			expect(app.activeTabId).toBe(map2Id);
+
+			// Case 2: Delete an empty tab (Map 1) without items should succeed without confirm
+			globalThis.window.confirm = mock(() => false);
+			app.deleteTab(map1Id);
+			expect(app.tabs.length).toBe(1);
+			expect(app.tabs[0].id).toBe(map2Id);
+			expect(app.activeTabId).toBe(map2Id);
+
+			// Case 3: Deleting a tab with items prompts for confirm
+			app.addTab(); // Adds Map 3, active becomes Map 3
+			const map3Id = app.activeTabId;
+			app.activeTab.items.push({
+				id: "item1",
+				text: "Test Item",
+				x: 10,
+				y: 10,
+			});
+
+			// If confirm is canceled, tab is NOT deleted
+			globalThis.window.confirm = mock(() => false);
+			app.deleteTab(map3Id);
+			expect(app.tabs.length).toBe(2);
+
+			// If confirm is accepted, tab IS deleted and active tab switches
+			globalThis.window.confirm = mock(() => true);
+			app.deleteTab(map3Id);
+			expect(app.tabs.length).toBe(1);
+			expect(app.tabs[0].id).toBe(map2Id);
+			expect(app.activeTabId).toBe(map2Id);
+		} finally {
+			globalThis.Date.now = originalDateNow;
+		}
+	});
 });

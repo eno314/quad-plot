@@ -75,6 +75,34 @@ export function quadPlotApp() {
 			this.save();
 		},
 
+		deleteTab(id) {
+			if (this.tabs.length <= 1) {
+				alert("これ以上タブを削除することはできません。");
+				return;
+			}
+			const tab = this.tabs.find((t) => t.id === id);
+			if (!tab) return;
+
+			if (tab.items && tab.items.length > 0) {
+				if (
+					!window.confirm(
+						"このタブにはアイテムが含まれています。本当に削除しますか？",
+					)
+				) {
+					return;
+				}
+			}
+
+			const index = this.tabs.findIndex((t) => t.id === id);
+			this.tabs = this.tabs.filter((t) => t.id !== id);
+
+			if (this.activeTabId === id) {
+				const nextActiveIndex = Math.min(index, this.tabs.length - 1);
+				this.activeTabId = this.tabs[nextActiveIndex].id;
+			}
+			this.save();
+		},
+
 		async exportData() {
 			const data = {
 				tabs: this.tabs,
